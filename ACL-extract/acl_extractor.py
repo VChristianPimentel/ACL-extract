@@ -87,8 +87,14 @@ class Acl_Extractor():
                             ac_dict['destination'] = data[index]
                         index+=1
                         if len(data) > index+1:
-                            if not data[index] == 'log':
-                                ac_dict['ports'] = '{} {}'.format(data[index], data[index+1])
+                            if not data[index] == 'log' and not data[index] == 'time-range':
+                                if data[index] in source_types:
+                                    if data[index+1] in self.object_dict:
+                                        ac_dict['ports'] = self.object_dict[data[index+1]]
+                                    else:
+                                        ac_dict['ports'] = data[index+1]
+                                else:
+                                    ac_dict['ports'] = '{} {}'.format(data[index], data[index+1])
                     else:
                         temp = ''
                         if data[index] == 'any':
@@ -99,14 +105,20 @@ class Acl_Extractor():
                                 index+=1
                         for index2, destination in enumerate(data, start = index):
                             try:
-                                if data[index] in ports:
-                                    ac_dict['ports'] = '{} {}'.format(data[index], data[index+1])
+                                if data[index] in ports or data[index] in source_types:
+                                    if data[index] in source_types:
+                                        if data[index+1] in self.object_dict:
+                                            ac_dict['ports'] = self.object_dict[data[index+1]]
+                                        else:
+                                            ac_dict['ports'] = data[index+1]
+                                    else:
+                                        ac_dict['ports'] = '{} {}'.format(data[index], data[index+1])
                                     break
-                                elif data[index] == 'log':
+                                elif data[index] == 'log' or data[index] == 'time-range':
                                     break
                             except IndexError:
                                 break
-                            temp += data[index]
+                            temp += data[index]+';'
                             index+=1      
                         if temp:
                             ac_dict['destination'] = temp
@@ -116,8 +128,6 @@ class Acl_Extractor():
                 ac_list.append(ac_dict)
             elif data[2] == 'remark':
                 remark += ac.split('remark')[1]
-            for item in ac_list:
-                print(item)
         return pd.DataFrame(ac_list)
 
     def to_csv(self, dataframe, csv_name):
