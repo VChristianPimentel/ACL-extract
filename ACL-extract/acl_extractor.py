@@ -22,7 +22,7 @@ class Acl_Extractor():
                     temp = ''
                     line = fp.readline()
                     while(not line.startswith('object-group') and not line.startswith('access-list')):
-                        temp += line+','
+                        temp += line.rstrip('\n')+';'
                         line = fp.readline()
                     self.object_dict[key] = temp
                 else:
@@ -116,6 +116,8 @@ class Acl_Extractor():
                 ac_list.append(ac_dict)
             elif data[2] == 'remark':
                 remark += ac.split('remark')[1]
+            for item in ac_list:
+                print(item)
         return pd.DataFrame(ac_list)
 
     def to_csv(self, dataframe, csv_name):

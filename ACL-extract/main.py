@@ -5,7 +5,7 @@ if __name__ == "__main__":
     while(again):
         try:
             file = input('File to proccess:')
-            file = './files/file2'
+            file = './files/file1'
             csv_filename = file+'.csv'
             extractor = Acl_Extractor(file)
             extractor.extract_access_list()
@@ -16,5 +16,7 @@ if __name__ == "__main__":
                 print('An error ocurred in the csv creation.')
             if(input('Again?: True|False') == False):
                 sys.exit()
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as e:
+            print(e)
             print('Goodbye!')
+            sys.exit()
