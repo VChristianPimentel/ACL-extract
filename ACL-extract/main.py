@@ -5,7 +5,6 @@ if __name__ == "__main__":
     while(again):
         try:
             file = input('File to proccess:')
-            file = './files/file1'
             csv_filename = file+'.csv'
             extractor = Acl_Extractor(file)
             extractor.extract_access_list()

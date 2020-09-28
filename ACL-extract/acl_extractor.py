@@ -11,18 +11,43 @@ class Acl_Extractor():
         self.file_name = file_name
     def clear_access_list(self):
         self.access_list.clear()
+    def clean_line(self, line):
+        line = line.strip().split(' ' , 1)[1]
+        if 'host' in line:
+            return line.split('host')[1].strip().rstrip('\n')+';'
+        elif 'object' in line:
+            return line.split('object')[1].strip().rstrip('\n')+';'
+        elif 'v4' in line:
+            return line.replace('v4', '')+';'
+        return line+';'
+    def search_dict(self, line):
+        final_line = ''
+        if line.endswith(';'):
+            line = line[:-1]
+        objects = line.split(';')
+        for item in objects:
+            if item in self.object_dict:
+                final_line += self.object_dict[item]
+            else:
+                final_line += item+';'
+        return final_line
     def extract_access_list(self):
         with open(self.file_name) as fp:
             line = fp.readline()
             while line:
                 if line.startswith('access-list'):
                     self.access_list.append(line)
+                if line.startswith('object network'):
+                    key = line.split()[2]
+                    line = fp.readline()
+                    temp = self.clean_line(line)
+                    self.object_dict[key] = self.clean_line(line)
                 if line.startswith('object-group'):
                     key = line.split()[2]
                     temp = ''
                     line = fp.readline()
                     while(not line.startswith('object-group') and not line.startswith('access-list')):
-                        temp += line.rstrip('\n')+';'
+                        temp += self.clean_line(line)
                         line = fp.readline()
                     self.object_dict[key] = temp
                 else:
@@ -46,14 +71,14 @@ class Acl_Extractor():
                     index = 5 
                 else:
                     if data[5] in self.object_dict:
-                        ac_dict['protocol'] = self.object_dict[data[5]]
+                        ac_dict['protocol'] = self.search_dict(self.object_dict[data[5]])
                     else:
                         ac_dict['protocol'] = data[5]
                     index = 6
                 if data[index] in source_types:
                     index+=1
                     if data[index] in self.object_dict:
-                        ac_dict['source'] = self.object_dict[data[index]]
+                        ac_dict['source'] = self.search_dict(self.object_dict[data[index]])
                     else:
                         ac_dict['source'] = data[index]
                     index+=1
@@ -82,7 +107,7 @@ class Acl_Extractor():
                     if data[index] in source_types:
                         index+=1
                         if data[index] in self.object_dict:
-                            ac_dict['destination'] = self.object_dict[data[index]]
+                            ac_dict['destination'] = self.search_dict(self.object_dict[data[index]])
                         else:
                             ac_dict['destination'] = data[index]
                         index+=1
@@ -90,7 +115,7 @@ class Acl_Extractor():
                             if not data[index] == 'log' and not data[index] == 'time-range':
                                 if data[index] in source_types:
                                     if data[index+1] in self.object_dict:
-                                        ac_dict['ports'] = self.object_dict[data[index+1]]
+                                        ac_dict['ports'] = self.search_dict(self.object_dict[data[index+1]])
                                     else:
                                         ac_dict['ports'] = data[index+1]
                                 else:
@@ -108,7 +133,7 @@ class Acl_Extractor():
                                 if data[index] in ports or data[index] in source_types:
                                     if data[index] in source_types:
                                         if data[index+1] in self.object_dict:
-                                            ac_dict['ports'] = self.object_dict[data[index+1]]
+                                            ac_dict['ports'] = self.search_dict(self.object_dict[data[index+1]])
                                         else:
                                             ac_dict['ports'] = data[index+1]
                                     else:
